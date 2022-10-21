@@ -8,6 +8,7 @@ import {
   Space,
   Spin,
   Table,
+  Typography,
 } from 'antd';
 import dayjs from 'dayjs';
 import type { ColumnsType } from 'antd/es/table';
@@ -21,6 +22,8 @@ import RulesModal from './rules-modal';
 import SearchForm, { SearchValueType } from './search';
 import { interfaceByIdResponseResult } from './type';
 import { versionByIdResponseResult } from '../version/type';
+
+const { Link } = Typography;
 
 const EditableContext = createContext<FormInstance | null>(null);
 
@@ -92,7 +95,21 @@ const EditableCell: React.FC<EditableCellProps> = ({
 
   if (editable) {
     childNode = editing ? (
-      <Form.Item noStyle name={dataIndex}>
+      <Form.Item
+        noStyle
+        name={dataIndex}
+        rules={[
+          { required: true, message: `接口/配置不能为空` },
+          () => ({
+            validator(_, value) {
+              if (value && !/^(https?|http?)?:\/\//.test(value)) {
+                return Promise.reject(new Error('必须http://或https://开头'));
+              }
+              return Promise.resolve();
+            },
+          }),
+        ]}
+      >
         <Input size="small" ref={inputRef} onPressEnter={save} onBlur={save} />
       </Form.Item>
     ) : (
@@ -263,10 +280,12 @@ function Interface() {
       title: '操作',
       key: 'action',
       fixed: 'right',
-      width: 60,
+      width: 150,
       render: (_, record) => (
         <Space key="action" size="middle">
-          <a
+          <Link>上移</Link>
+          <Link>下移</Link>
+          <Link
             onClick={() =>
               setAwaitList(
                 awaitList.filter(
@@ -276,7 +295,7 @@ function Interface() {
             }
           >
             删除
-          </a>
+          </Link>
         </Space>
       ),
     },

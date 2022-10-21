@@ -79,6 +79,16 @@ function RulesModal(props: rulesModalProps) {
                   name={[name, 'url']}
                   rules={[
                     { required: true, message: `步骤${index + 1}不能为空` },
+                    () => ({
+                      validator(_, value) {
+                        if (value && !/^(https?|http?)?:\/\//.test(value)) {
+                          return Promise.reject(
+                            new Error('必须http://或https://开头')
+                          );
+                        }
+                        return Promise.resolve();
+                      },
+                    }),
                   ]}
                   {...restField}
                 >

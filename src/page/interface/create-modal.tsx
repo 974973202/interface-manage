@@ -137,7 +137,19 @@ function CreateModal(props: CreateModalProps) {
         <Form.Item
           label="接口地址"
           name="interfaceAddress"
-          rules={[{ required: true, message: '请输入接口地址' }]}
+          rules={[
+            { required: true, message: '请输入接口地址' },
+            () => ({
+              validator(_, value) {
+                if (value && !/^(https?|http?)?:\/\//.test(value)) {
+                  return Promise.reject(
+                    new Error('接口地址必须http://或https://开头')
+                  );
+                }
+                return Promise.resolve();
+              },
+            }),
+          ]}
         >
           <Input placeholder="请输入接口地址" />
         </Form.Item>
