@@ -52,11 +52,12 @@ function RulesModal(props: rulesModalProps) {
         form.resetFields();
       }}
       destroyOnClose
+      width={'60%'}
       maskClosable={false}
     >
       <Form
-        labelCol={{ span: 6 }}
-        wrapperCol={{ span: 16 }}
+        labelCol={{ span: 4 }}
+        wrapperCol={{ span: 20 }}
         onFinish={onFinish}
         form={form}
         autoComplete="off"
@@ -106,7 +107,7 @@ function RulesModal(props: rulesModalProps) {
           <Input />
         </Form.Item>
 
-        <Form.Item wrapperCol={{ offset: 19, span: 16 }}>
+        <Form.Item style={{ display: 'flex', justifyContent: 'end' }}>
           <Button type="primary" htmlType="submit">
             保存
           </Button>

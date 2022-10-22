@@ -21,7 +21,10 @@ export function putModule(params: moduleModalDataProps & { id: string }) {
   const { id, ...rest } = params;
   return request(`/api/module/${id}`, {
     method: 'put',
-    data: rest,
+    data: {
+      ...rest,
+      data: Date.now(),
+    },
   });
 }
 

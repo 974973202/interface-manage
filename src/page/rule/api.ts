@@ -28,7 +28,10 @@ export function putRules(params: rulesModalDataProps & { id: string }) {
   const { id, ...rest } = params;
   return request(`/api/rules/${id}`, {
     method: 'put',
-    data: rest,
+    data: {
+      ...rest,
+      data: Date.now(),
+    },
   });
 }
 

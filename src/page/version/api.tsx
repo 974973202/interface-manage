@@ -25,7 +25,10 @@ export function putVersion(params: versionModalDataProps & { id: string }) {
   const { id, ...rest } = params;
   return request(`/api/version/${id}`, {
     method: 'put',
-    data: rest,
+    data: {
+      ...rest,
+      data: Date.now(),
+    },
   });
 }
 

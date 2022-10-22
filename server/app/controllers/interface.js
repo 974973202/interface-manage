@@ -10,6 +10,7 @@ class InterfaceCtl {
     const data = await Interface.find({ ...searchParams, size })
       .limit(size)
       .skip(page * size)
+      .sort({ '_id': -1 })
       .populate(['module', 'version']);
     ctx.body = {
       data,

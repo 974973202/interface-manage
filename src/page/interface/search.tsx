@@ -1,7 +1,5 @@
 import { Button, Form, Select } from 'antd';
-import { useState } from 'react';
 import { moduleByIdResponseResult } from '../module/type';
-import { getVersionDetail } from '../version/api';
 import { versionByIdResponseResult } from '../version/type';
 import type { FormInstance } from 'antd/es/form';
 
@@ -16,13 +14,20 @@ interface SearchProps {
   onSearch: (data: SearchValueType) => void;
   searchForm: FormInstance;
   versionList: versionByIdResponseResult[];
+  moduleList: moduleByIdResponseResult[];
   setVisible: (data: boolean) => void;
   setEditId: (data: string | undefined) => void;
 }
 
 function Search(props: SearchProps) {
-  const { onSearch, searchForm, versionList, setVisible, setEditId } = props;
-  const [moduleList, setModuleList] = useState<moduleByIdResponseResult[]>([]);
+  const {
+    onSearch,
+    searchForm,
+    versionList,
+    setVisible,
+    setEditId,
+    moduleList,
+  } = props;
   const [form] = Form.useForm();
 
   return (
@@ -42,15 +47,15 @@ function Search(props: SearchProps) {
             (option?.children as unknown as string).includes(input)
           }
           style={{ width: 150 }}
-          onChange={async id => {
-            if (id) {
-              const { module } = await getVersionDetail(id);
-              setModuleList(module || []);
-            } else {
-              searchForm.resetFields();
-              setModuleList([]);
-            }
-          }}
+          // onChange={async id => {
+          //   if (id) {
+          //     const { module } = await getVersionDetail(id);
+          //     setModuleList(module || []);
+          //   } else {
+          //     searchForm.resetFields();
+          //     setModuleList([]);
+          //   }
+          // }}
         >
           {versionList?.map((item: versionByIdResponseResult) => (
             <Option key={item._id} value={item._id}>
@@ -63,7 +68,7 @@ function Search(props: SearchProps) {
       <Form.Item label="模块" name="module">
         <Select
           style={{ width: 150 }}
-          disabled={!moduleList.length}
+          // disabled={!moduleList.length}
           placeholder="请选择模块"
           showSearch
           allowClear

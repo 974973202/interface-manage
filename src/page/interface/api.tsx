@@ -21,7 +21,10 @@ export function putInterface(params: any) {
   const { id, ...rest } = params;
   return request(`/api/interface/${id}`, {
     method: 'put',
-    data: rest,
+    data: {
+      ...rest,
+      data: Date.now(),
+    },
   });
 }
 

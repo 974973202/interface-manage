@@ -16,12 +16,14 @@ import type { FormInstance } from 'antd/es/form';
 import { useEffect, useState, createContext, useRef, useContext } from 'react';
 import { getInterface, delInterface } from './api';
 import { getVersion } from '../version/api';
+import { getModule } from '../module/api';
 import { v4 } from 'uuid';
 import CreateModal from './create-modal';
 import RulesModal from './rules-modal';
 import SearchForm, { SearchValueType } from './search';
 import { interfaceByIdResponseResult } from './type';
 import { versionByIdResponseResult } from '../version/type';
+import { moduleByIdResponseResult } from '../module/type';
 
 const { Link } = Typography;
 
@@ -86,8 +88,9 @@ const EditableCell: React.FC<EditableCellProps> = ({
       const values = await form?.validateFields();
       toggleEdit();
       handleSave({ ...record, ...values });
-    } catch (errInfo) {
-      console.log('Save failed:', errInfo);
+    } catch (error: any) {
+      const err = error?.errorFields?.[0]?.errors?.[0] || '';
+      message.error(err);
     }
   };
 
@@ -103,7 +106,9 @@ const EditableCell: React.FC<EditableCellProps> = ({
           () => ({
             validator(_, value) {
               if (value && !/^(https?|http?)?:\/\//.test(value)) {
-                return Promise.reject(new Error('必须http://或https://开头'));
+                return Promise.reject(
+                  new Error('接口/配置必须http://或https://开头')
+                );
               }
               return Promise.resolve();
             },
@@ -134,6 +139,7 @@ function Interface() {
   const [versionList, setVersionList] = useState<versionByIdResponseResult[]>(
     []
   );
+  const [moduleList, setModuleList] = useState<moduleByIdResponseResult[]>([]);
   // 待执行队列数据
   const [awaitList, setAwaitList] = useState<Array<AwaitListType>>([]);
   // 数据总数
@@ -153,6 +159,8 @@ function Interface() {
   >([]);
   // spinning
   const [spinning, setSpinning] = useState(false);
+  // 表格 loading
+  const [tableLoading, setTableLoading] = useState(false);
 
   const columns: ColumnsType<interfaceByIdResponseResult> = [
     {
@@ -180,7 +188,7 @@ function Interface() {
         let url = value;
         const urlParams: Array<string> = [];
         if (record?.parameter?.length) {
-          url = `${value}?`;
+          url = /\?/g.test(url) ? `${value}&` : `${value}?`;
           record?.parameter.forEach(p => {
             urlParams.push(`${p}=xxx`);
           });
@@ -216,7 +224,10 @@ function Interface() {
             title={`是否删除接口模块${record.module?.[0]?.moduleName}`}
             onConfirm={async () => {
               await delInterface(record._id);
-              getInterfaceList();
+              getInterfaceList({
+                page: 0,
+                size: 10,
+              });
             }}
             okText="确定"
             cancelText="取消"
@@ -233,7 +244,7 @@ function Interface() {
     let url = record.interfaceAddress;
     const urlParams: Array<string> = [];
     if (record?.parameter?.length) {
-      url = `${url}?`;
+      url = /\?/g.test(url) ? `${url}&` : `${url}?`;
       record?.parameter.forEach((p: string) => {
         urlParams.push(`${p}=xxx`);
       });
@@ -281,10 +292,32 @@ function Interface() {
       key: 'action',
       fixed: 'right',
       width: 150,
-      render: (_, record) => (
+      render: (_, record, index) => (
         <Space key="action" size="middle">
-          <Link>上移</Link>
-          <Link>下移</Link>
+          <Link
+            disabled={index === 0}
+            onClick={() => {
+              const cloneAwaitList = JSON.parse(JSON.stringify(awaitList));
+              const mark = cloneAwaitList[index - 1];
+              cloneAwaitList[index - 1] = cloneAwaitList[index];
+              cloneAwaitList[index] = mark;
+              setAwaitList(cloneAwaitList);
+            }}
+          >
+            上移
+          </Link>
+          <Link
+            disabled={index === awaitList.length - 1}
+            onClick={() => {
+              const cloneAwaitList = JSON.parse(JSON.stringify(awaitList));
+              const mark = cloneAwaitList[index + 1];
+              cloneAwaitList[index + 1] = cloneAwaitList[index];
+              cloneAwaitList[index] = mark;
+              setAwaitList(cloneAwaitList);
+            }}
+          >
+            下移
+          </Link>
           <Link
             onClick={() =>
               setAwaitList(
@@ -301,19 +334,40 @@ function Interface() {
     },
   ];
 
-  const getInterfaceList = async () => {
-    const { data, total } = await getInterface(params);
-    setData(data);
-    setTotal(total);
+  const getInterfaceList = async (
+    params: {
+      page: number;
+      size: number;
+    } & Partial<SearchValueType>
+  ) => {
+    try {
+      setTableLoading(true);
+      const { data, total } = await getInterface(params);
+      setData(data);
+      setTotal(total);
+    } catch (error: any) {
+      message.error(error?.data?.message || '未知错误');
+    } finally {
+      setTableLoading(false);
+    }
   };
 
   useEffect(() => {
-    getInterfaceList();
-
     (async () => {
+      // 获取所有的版本信息
       setVersionList((await getVersion())?.data || []);
     })();
+
+    (async () => {
+      // 获取所有的模块信息
+      setModuleList((await getModule())?.data || []);
+    })();
   }, []);
+
+  useEffect(() => {
+    // 获取接口列表信息
+    getInterfaceList(params);
+  }, [params]);
 
   const handleEdit = async (record: interfaceByIdResponseResult) => {
     setEditId(record._id);
@@ -322,9 +376,7 @@ function Interface() {
   };
 
   const onSearch = async (value: SearchValueType) => {
-    const { data, total } = await getInterface({ page: 0, size: 10, ...value });
-    setData(data);
-    setTotal(total);
+    getInterfaceList({ page: 0, size: 10, ...value });
   };
 
   const finalColumns = columnsAwait.map((col: any) => {
@@ -377,6 +429,7 @@ function Interface() {
           onSearch={onSearch}
           searchForm={searchForm}
           versionList={versionList}
+          moduleList={moduleList}
           setVisible={setVisible}
           setEditId={setEditId}
         />
@@ -386,6 +439,7 @@ function Interface() {
         size="small"
         columns={columns}
         dataSource={data}
+        loading={tableLoading}
         pagination={{
           total,
           size: 'small',

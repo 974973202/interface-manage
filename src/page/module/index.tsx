@@ -73,11 +73,20 @@ function Module() {
     page: 0,
     size: 10,
   });
+  // 表格 loading
+  const [tableLoading, setTableLoading] = useState(false);
 
   const getModuleList = async (params: { page: number; size: number }) => {
-    const { data, total } = await getModule(params);
-    setData(data);
-    setTotal(total);
+    try {
+      setTableLoading(true);
+      const { data, total } = await getModule(params);
+      setData(data);
+      setTotal(total);
+    } catch (error: any) {
+      message.error(error?.data?.message || '未知错误');
+    } finally {
+      setTableLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -126,6 +135,7 @@ function Module() {
         rowKey="id"
         columns={columns}
         dataSource={data}
+        loading={tableLoading}
         pagination={{
           total,
           size: 'small',
@@ -150,7 +160,6 @@ function Module() {
         destroyOnClose
       >
         <Form
-          name="模板新建"
           labelCol={{ span: 6 }}
           wrapperCol={{ span: 16 }}
           initialValues={{ remember: true }}
